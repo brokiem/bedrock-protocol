@@ -28,4 +28,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ProtocolData
-          path: data/1.17.0/*
+          path: |
+            data/**/read.js
+            data/**/size.js
+            data/**/write.js
