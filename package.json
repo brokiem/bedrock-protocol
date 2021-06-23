@@ -1,6 +1,6 @@
 {
   "name": "bedrock-protocol",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Minecraft Bedrock Edition protocol library",
   "main": "index.js",
   "scripts": {
@@ -30,7 +30,7 @@
     "minecraft-folder-path": "^1.1.0",
     "node-fetch": "^2.6.1",
     "prismarine-nbt": "^1.5.0",
-    "protodef-compiler-fix": "latest",
+    "protodef": "^1.14.0",
     "smart-buffer": "^4.1.0",
     "uuid-1345": "^1.0.2"
   },

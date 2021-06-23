@@ -1,11 +1,11 @@
 const { ClientStatus, Connection } = require('./connection')
-const fs = require('fs')
 const Options = require('./options')
-const debug = require('debug')('minecraft-protocol')
-
+const { serialize, isDebug } = require('./datatypes/util')
 const { KeyExchange } = require('./handshake/keyExchange')
 const Login = require('./handshake/login')
 const LoginVerify = require('./handshake/loginVerify')
+const fs = require('fs')
+const debug = require('debug')('minecraft-protocol')
 
 class Player extends Connection {
   constructor (server, connection) {
@@ -22,8 +22,11 @@ class Player extends Connection {
 
     this.startQueue()
     this.status = ClientStatus.Authenticating
-    this.inLog = (...args) => debug('S ->', ...args)
-    this.outLog = (...args) => debug('S <-', ...args)
+
+    if (isDebug) {
+      this.inLog = (...args) => debug('S ->', ...args)
+      this.outLog = (...args) => debug('S <-', ...args)
+    }
   }
 
   getUserData () {
@@ -32,7 +35,6 @@ class Player extends Connection {
 
   onLogin (packet) {
     const body = packet.data
-    // debug('Login body', body)
     this.emit('loggingIn', body)
 
     const clientVer = body.protocol_version
@@ -59,7 +61,6 @@ class Player extends Connection {
       this.disconnect('Server authentication error')
       return
     }
-    debug('Verified user pub key', key, userData)
 
     this.emit('server.client_handshake', { key }) // internal so we start encryption
 
@@ -100,7 +101,6 @@ class Player extends Connection {
   // After sending Server to Client Handshake, this handles the client's
   // Client to Server handshake response. This indicates successful encryption
   onHandshake () {
-    // this.outLog('Sending login success!', this.status)
     // https://wiki.vg/Bedrock_Protocol#Play_Status
     this.write('play_status', { status: 'login_success' })
     this.status = ClientStatus.Initializing
@@ -110,7 +110,7 @@ class Player extends Connection {
   close (reason) {
     if (this.status !== ClientStatus.Disconnected) {
       this.emit('close') // Emit close once
-      if (!reason) console.trace('Client closed connection', this.connection?.address)
+      if (!reason) this.inLog?.('Client closed connection', this.connection?.address)
     }
     this.q = []
     this.q2 = []
@@ -125,10 +125,11 @@ class Player extends Connection {
       var des = this.server.deserializer.parsePacketBuffer(packet) // eslint-disable-line
     } catch (e) {
       this.disconnect('Server error')
-      console.warn('Packet parsing failed! Writing dump to ./packetdump.bin')
-      fs.writeFile('packetdump.bin', packet)
+      fs.writeFile(`packetdump_${this.connection.address}_${Date.now()}.bin`, packet)
       return
     }
+
+    this.inLog?.(des.data.name, serialize(des.data.params).slice(0, 200))
 
     switch (des.data.name) {
       case 'login':
@@ -140,13 +141,13 @@ class Player extends Connection {
         break
       case 'set_local_player_as_initialized':
         this.status = ClientStatus.Initialized
-        this.inLog('Server client spawned')
+        this.inLog?.('Server client spawned')
         // Emit the 'spawn' event
         this.emit('spawn')
         break
       default:
         if (this.status === ClientStatus.Disconnected || this.status === ClientStatus.Authenticating) {
-          this.inLog('ignoring', des.data.name)
+          this.inLog?.('ignoring', des.data.name)
           return
         }
     }
@@ -154,4 +155,4 @@ class Player extends Connection {
   }
 }
 
-module.exports = { Player, ClientStatus }
+module.exports = { Player }
