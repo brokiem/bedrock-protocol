@@ -2263,7 +2263,7 @@
                             "container",
                             [
                               {
-                                "name": "item_id",*
+                                "name": "item_id",
                                 "type": "varint"
                               }
                             ]
