@@ -154,54 +154,58 @@ class Client extends Connection {
   }
 
   readPacket (packet) {
-    const des = this.deserializer.parsePacketBuffer(packet)
-    const pakData = { name: des.data.name, params: des.data.params }
-    this.inLog?.('-> C', pakData.name, this.options.loggging ? serialize(pakData.params) : '')
-    this.emit('packet', des)
+    try {
+      const des = this.deserializer.parsePacketBuffer(packet)
+      const pakData = { name: des.data.name, params: des.data.params }
+      this.inLog?.('-> C', pakData.name, this.options.loggging ? serialize(pakData.params) : '')
+      this.emit('packet', des)
 
-    if (debugging) {
-      // Packet verifying (decode + re-encode + match test)
-      if (pakData.name) {
-        this.deserializer.verify(packet, this.serializer)
+      if (debugging) {
+        // Packet verifying (decode + re-encode + match test)
+        if (pakData.name) {
+          this.deserializer.verify(packet, this.serializer)
+        }
       }
-    }
 
-    // Abstract some boilerplate before sending to listeners
-    switch (des.data.name) {
-      case 'server_to_client_handshake':
-        this.emit('client.server_handshake', des.data.params)
-        break
-      case 'disconnect': // Client kicked
-        this.emit(des.data.name, des.data.params) // Emit before we kill all listeners.
-        this.onDisconnectRequest(des.data.params)
-        break
-      case 'start_game':
-        this.startGameData = pakData.params
-        this.startGameData.itemstates.forEach(state => {
-          if (state.name === 'minecraft:shield') {
-            this.serializer.proto.setVariable('ShieldItemID', state.runtime_id)
-            this.deserializer.proto.setVariable('ShieldItemID', state.runtime_id)
+      // Abstract some boilerplate before sending to listeners
+      switch (des.data.name) {
+        case 'server_to_client_handshake':
+          this.emit('client.server_handshake', des.data.params)
+          break
+        case 'disconnect': // Client kicked
+          this.emit(des.data.name, des.data.params) // Emit before we kill all listeners.
+          this.onDisconnectRequest(des.data.params)
+          break
+        case 'start_game':
+          this.startGameData = pakData.params
+          this.startGameData.itemstates.forEach(state => {
+            if (state.name === 'minecraft:shield') {
+              this.serializer.proto.setVariable('ShieldItemID', state.runtime_id)
+              this.deserializer.proto.setVariable('ShieldItemID', state.runtime_id)
+            }
+          })
+          break
+        case 'play_status':
+          if (this.status === ClientStatus.Authenticating) {
+            this.inLog?.('Server wants to skip encryption')
+            this.emit('join')
+            this.status = ClientStatus.Initializing
           }
-        })
-        break
-      case 'play_status':
-        if (this.status === ClientStatus.Authenticating) {
-          this.inLog?.('Server wants to skip encryption')
-          this.emit('join')
-          this.status = ClientStatus.Initializing
-        }
-        this.onPlayStatus(pakData.params)
-        break
-      default:
-        if (this.status !== ClientStatus.Initializing && this.status !== ClientStatus.Initialized) {
-          // TODO: standardjs bug happens here with ?.(`something ${des.data.name}`)
-          if (this.inLog) this.inLog(`Can't accept ${des.data.name}, client not yet authenticated : ${this.status}`)
-          return
-        }
-    }
+          this.onPlayStatus(pakData.params)
+          break
+        default:
+          if (this.status !== ClientStatus.Initializing && this.status !== ClientStatus.Initialized) {
+            // TODO: standardjs bug happens here with ?.(`something ${des.data.name}`)
+            if (this.inLog) this.inLog(`Can't accept ${des.data.name}, client not yet authenticated : ${this.status}`)
+            return
+          }
+      }
 
-    // Emit packet
-    this.emit(des.data.name, des.data.params)
+      // Emit packet
+      this.emit(des.data.name, des.data.params)
+    } catch (e) {
+      console.log(e.toString());
+    }
   }
 }
 
