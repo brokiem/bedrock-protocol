@@ -204,7 +204,7 @@ class Client extends Connection {
       // Emit packet
       this.emit(des.data.name, des.data.params)
     } catch (e) {
-      console.log(e.toString());
+      console.log(e.toString())
     }
   }
 }
