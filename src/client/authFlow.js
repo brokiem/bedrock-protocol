@@ -120,11 +120,9 @@ class MsAuthFlow {
         if (this.options.authTitle) {
           const deviceToken = await this.xbl.getDeviceToken({ DeviceType: 'Nintendo', Version: '0.0.0' })
           const titleToken = await this.xbl.getTitleToken(msaToken, deviceToken)
-          const xsts = await this.xbl.getXSTSToken(ut, deviceToken, titleToken)
-          return xsts
+          return await this.xbl.getXSTSToken(ut, deviceToken, titleToken)
         } else {
-          const xsts = await this.xbl.getXSTSToken(ut)
-          return xsts
+          return await this.xbl.getXSTSToken(ut)
         }
       }, () => { this.msa.forceRefresh = true }, 2)
     }
