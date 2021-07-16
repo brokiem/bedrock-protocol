@@ -1,7 +1,7 @@
 import EventEmitter from "events"
 
 declare module "bedrock-protocol" {
-  type Version = '1.17.0' | '1.16.220'
+  type Version = '1.17.10' | '1.17.0' | '1.16.220'
 
   enum title { MinecraftNintendoSwitch, MinecraftJava }
 
