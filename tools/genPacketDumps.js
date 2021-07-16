@@ -9,10 +9,7 @@ const { join } = require('path')
 
 function hasDumps (version) {
   const root = join(__dirname, `../data/${version}/sample/packets/`)
-  if (!fs.existsSync(root) || getFiles(root).length < 10) {
-    return false
-  }
-  return true
+  return !(!fs.existsSync(root) || getFiles(root).length < 10)
 }
 
 let loop
