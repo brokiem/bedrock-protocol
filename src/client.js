@@ -156,7 +156,6 @@ class Client extends Connection {
   }
 
   readPacket (packet) {
-    try {
       const des = this.deserializer.parsePacketBuffer(packet)
       const pakData = { name: des.data.name, params: des.data.params }
       this.inLog?.('-> C', pakData.name, this.options.loggging ? serialize(pakData.params) : '')
@@ -205,9 +204,6 @@ class Client extends Connection {
 
       // Emit packet
       this.emit(des.data.name, des.data.params)
-    } catch (e) {
-      console.log(e.toString())
-    }
   }
 }
 
